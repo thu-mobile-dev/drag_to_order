@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
+import "package:drag_to_order/model.dart";
 
 void main() {
   runApp(
@@ -8,30 +9,6 @@ void main() {
     ),
   );
 }
-
-const List<Item> _items = [
-  Item(
-    name: 'Spinach Pizza',
-    totalPriceCents: 1299,
-    uid: '1',
-    imageProvider: NetworkImage('https://flutter'
-        '.dev/docs/cookbook/img-files/effects/split-check/Food1.jpg'),
-  ),
-  Item(
-    name: 'Veggie Delight',
-    totalPriceCents: 799,
-    uid: '2',
-    imageProvider: NetworkImage('https://flutter'
-        '.dev/docs/cookbook/img-files/effects/split-check/Food2.jpg'),
-  ),
-  Item(
-    name: 'Chicken Parmesan',
-    totalPriceCents: 1499,
-    uid: '3',
-    imageProvider: NetworkImage('https://flutter'
-        '.dev/docs/cookbook/img-files/effects/split-check/Food3.jpg'),
-  ),
-];
 
 @immutable
 class ExampleDragAndDrop extends StatefulWidget {
@@ -43,24 +20,6 @@ class ExampleDragAndDrop extends StatefulWidget {
 
 class _ExampleDragAndDropState extends State<ExampleDragAndDrop>
     with TickerProviderStateMixin {
-  final List<Customer> _people = [
-    Customer(
-      name: 'Makayla',
-      imageProvider: const NetworkImage('https://flutter'
-          '.dev/docs/cookbook/img-files/effects/split-check/Avatar1.jpg'),
-    ),
-    Customer(
-      name: 'Nathan',
-      imageProvider: const NetworkImage('https://flutter'
-          '.dev/docs/cookbook/img-files/effects/split-check/Avatar2.jpg'),
-    ),
-    Customer(
-      name: 'Emilio',
-      imageProvider: const NetworkImage('https://flutter'
-          '.dev/docs/cookbook/img-files/effects/split-check/Avatar3.jpg'),
-    ),
-  ];
-
   final GlobalKey _draggableKey = GlobalKey();
 
   void _itemDroppedOnCustomerCart({
@@ -76,24 +35,7 @@ class _ExampleDragAndDropState extends State<ExampleDragAndDrop>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
-      appBar: _buildAppBar(),
       body: _buildContent(),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      iconTheme: const IconThemeData(color: Color(0xFFF64209)),
-      title: Text(
-        'Order Food',
-        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontSize: 36,
-              color: const Color(0xFFF64209),
-              fontWeight: FontWeight.bold,
-            ),
-      ),
-      backgroundColor: const Color(0xFFF7F7F7),
-      elevation: 0,
     );
   }
 
@@ -117,14 +59,14 @@ class _ExampleDragAndDropState extends State<ExampleDragAndDrop>
   Widget _buildMenuList() {
     return ListView.separated(
       padding: const EdgeInsets.all(16.0),
-      itemCount: _items.length,
+      itemCount: items.length,
       separatorBuilder: (context, index) {
         return const SizedBox(
           height: 12.0,
         );
       },
       itemBuilder: (context, index) {
-        final item = _items[index];
+        final item = items[index];
         return _buildMenuItem(
           item: item,
         );
@@ -140,12 +82,12 @@ class _ExampleDragAndDropState extends State<ExampleDragAndDrop>
       dragAnchorStrategy: pointerDragAnchorStrategy,
       feedback: DraggingListItem(
         dragKey: _draggableKey,
-        photoProvider: item.imageProvider,
+        photoProvider: item.image,
       ),
       child: MenuListItem(
         name: item.name,
-        price: item.formattedTotalItemPrice,
-        photoProvider: item.imageProvider,
+        price: item.priceString,
+        photoProvider: item.image,
       ),
     );
   }
@@ -157,7 +99,7 @@ class _ExampleDragAndDropState extends State<ExampleDragAndDrop>
         vertical: 20.0,
       ),
       child: Row(
-        children: _people.map(_buildPersonWithDropZone).toList(),
+        children: customers.map(_buildPersonWithDropZone).toList(),
       ),
     );
   }
@@ -209,7 +151,7 @@ class CustomerCart extends StatelessWidget {
       child: Material(
         elevation: highlighted ? 8.0 : 4.0,
         borderRadius: BorderRadius.circular(22.0),
-        color: highlighted ? const Color(0xFFF64209) : Colors.white,
+        color: highlighted ? const Color(0xFF6BD3A4) : Colors.white,
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: 12.0,
@@ -220,10 +162,10 @@ class CustomerCart extends StatelessWidget {
             children: [
               ClipOval(
                 child: SizedBox(
-                  width: 46,
-                  height: 46,
+                  width: 72,
+                  height: 72,
                   child: Image(
-                    image: customer.imageProvider,
+                    image: customer.image,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -233,12 +175,11 @@ class CustomerCart extends StatelessWidget {
                 customer.name,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: textColor,
-                      fontWeight:
-                          hasItems ? FontWeight.normal : FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
               ),
               Visibility(
-                visible: hasItems,
+                visible: true, // TODO 这里需要一直为 true，所以把这个 Visibility 取了
                 maintainState: true,
                 maintainAnimation: true,
                 maintainSize: true,
@@ -246,7 +187,7 @@ class CustomerCart extends StatelessWidget {
                   children: [
                     const SizedBox(height: 4.0),
                     Text(
-                      customer.formattedTotalItemPrice,
+                      customer.totalPriceString,
                       style: Theme.of(context).textTheme.bodySmall!.copyWith(
                             color: textColor,
                             fontSize: 16.0,
@@ -255,7 +196,7 @@ class CustomerCart extends StatelessWidget {
                     ),
                     const SizedBox(height: 4.0),
                     Text(
-                      '${customer.items.length} item${customer.items.length != 1 ? 's' : ''}',
+                      hasItems ? "共 ${customer.items.length} 份" : "未点餐",
                       style: Theme.of(context).textTheme.titleMedium!.copyWith(
                             color: textColor,
                             fontSize: 12.0,
@@ -275,8 +216,8 @@ class CustomerCart extends StatelessWidget {
 class MenuListItem extends StatelessWidget {
   const MenuListItem({
     super.key,
-    this.name = '',
-    this.price = '',
+    this.name = "",
+    this.price = "",
     required this.photoProvider,
     this.isDepressed = false,
   });
@@ -323,7 +264,7 @@ class MenuListItem extends StatelessWidget {
                   Text(
                     name,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontSize: 18.0,
+                          fontSize: 24.0,
                         ),
                   ),
                   const SizedBox(height: 10.0),
@@ -374,39 +315,5 @@ class DraggingListItem extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-@immutable
-class Item {
-  const Item({
-    required this.totalPriceCents,
-    required this.name,
-    required this.uid,
-    required this.imageProvider,
-  });
-  final int totalPriceCents;
-  final String name;
-  final String uid;
-  final ImageProvider imageProvider;
-  String get formattedTotalItemPrice =>
-      '\$${(totalPriceCents / 100.0).toStringAsFixed(2)}';
-}
-
-class Customer {
-  Customer({
-    required this.name,
-    required this.imageProvider,
-    List<Item>? items,
-  }) : items = items ?? [];
-
-  final String name;
-  final ImageProvider imageProvider;
-  final List<Item> items;
-
-  String get formattedTotalItemPrice {
-    final totalPriceCents =
-        items.fold<int>(0, (prev, item) => prev + item.totalPriceCents);
-    return '\$${(totalPriceCents / 100.0).toStringAsFixed(2)}';
   }
 }
