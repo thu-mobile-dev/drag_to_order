@@ -4,59 +4,55 @@ import "package:drag_to_order/model.dart";
 void main() {
   runApp(
     const MaterialApp(
-      home: ExampleDragAndDrop(),
+      home: FoodStallOrderMenu(),
       debugShowCheckedModeBanner: false,
     ),
   );
 }
 
 @immutable
-class ExampleDragAndDrop extends StatefulWidget {
-  const ExampleDragAndDrop({super.key});
+class FoodStallOrderMenu extends StatefulWidget {
+  const FoodStallOrderMenu({super.key});
 
   @override
-  State<ExampleDragAndDrop> createState() => _ExampleDragAndDropState();
+  State<FoodStallOrderMenu> createState() => _FoodStallOrderMenu();
 }
 
-class _ExampleDragAndDropState extends State<ExampleDragAndDrop>
+class _FoodStallOrderMenu extends State<FoodStallOrderMenu>
     with TickerProviderStateMixin {
-  final GlobalKey _draggableKey = GlobalKey();
-
-  void _itemDroppedOnCustomerCart({
-    required Item item,
-    required Customer customer,
-  }) {
-    setState(() {
-      customer.items.add(item);
-    });
-  }
+  final GlobalKey draggableKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
-      body: _buildContent(),
-    );
-  }
-
-  Widget _buildContent() {
-    return Stack(
-      children: [
-        SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: _buildMenuList(),
-              ),
-              _buildPeopleRow(),
-            ],
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: ItemsView(draggableKey: draggableKey),
+                ),
+                const CustomersView(),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+}
 
-  Widget _buildMenuList() {
+// Item
+
+class ItemsView extends StatelessWidget {
+  const ItemsView({super.key, required this.draggableKey});
+
+  final GlobalKey draggableKey;
+
+  @override
+  Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.all(16.0),
       itemCount: items.length,
@@ -67,44 +63,172 @@ class _ExampleDragAndDropState extends State<ExampleDragAndDrop>
       },
       itemBuilder: (context, index) {
         final item = items[index];
-        return _buildMenuItem(
+        return DraggableItemView(
           item: item,
+          draggableKey: draggableKey,
         );
       },
     );
   }
+}
 
-  Widget _buildMenuItem({
-    required Item item,
-  }) {
+class DraggableItemView extends StatelessWidget {
+  const DraggableItemView(
+      {super.key, required this.item, required this.draggableKey});
+
+  final Item item;
+  final GlobalKey draggableKey;
+
+  @override
+  Widget build(BuildContext context) {
     return LongPressDraggable<Item>(
       data: item,
       dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: DraggingListItem(
-        dragKey: _draggableKey,
+      feedback: DraggingItemView(
+        dragKey: draggableKey,
         photoProvider: item.image,
       ),
-      child: MenuListItem(
+      child: ItemView(
         name: item.name,
         price: item.priceString,
         photoProvider: item.image,
       ),
     );
   }
+}
 
-  Widget _buildPeopleRow() {
+class ItemView extends StatelessWidget {
+  const ItemView({
+    super.key,
+    this.name = "",
+    this.price = "",
+    required this.photoProvider,
+    this.isDepressed = false,
+  });
+
+  final String name;
+  final String price;
+  final ImageProvider photoProvider;
+  final bool isDepressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 12.0,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12.0),
+              child: SizedBox(
+                width: 120,
+                height: 120,
+                child: Center(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 100),
+                    curve: Curves.easeInOut,
+                    height: isDepressed ? 115 : 120,
+                    width: isDepressed ? 115 : 120,
+                    child: Image(
+                      image: photoProvider,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 30.0),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontSize: 24.0,
+                        ),
+                  ),
+                  const SizedBox(height: 10.0),
+                  Text(
+                    price,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18.0,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class DraggingItemView extends StatelessWidget {
+  const DraggingItemView({
+    super.key,
+    required this.dragKey,
+    required this.photoProvider,
+  });
+
+  final GlobalKey dragKey;
+  final ImageProvider photoProvider;
+
+  @override
+  Widget build(BuildContext context) {
+    return FractionalTranslation(
+      translation: const Offset(-0.5, -0.5),
+      child: ClipRRect(
+        key: dragKey,
+        borderRadius: BorderRadius.circular(12.0),
+        child: SizedBox(
+          height: 150,
+          width: 150,
+          child: Opacity(
+            opacity: 0.85,
+            child: Image(
+              image: photoProvider,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Customer
+
+class CustomersView extends StatelessWidget {
+  const CustomersView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 8.0,
         vertical: 20.0,
       ),
       child: Row(
-        children: customers.map(_buildPersonWithDropZone).toList(),
+        children: customers
+            .map((customer) => DroppableCustomerView(customer: customer))
+            .toList(),
       ),
     );
   }
+}
 
-  Widget _buildPersonWithDropZone(Customer customer) {
+class DroppableCustomerView extends StatelessWidget {
+  const DroppableCustomerView({super.key, required this.customer});
+  final Customer customer;
+
+  @override
+  Widget build(BuildContext context) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(
@@ -112,17 +236,14 @@ class _ExampleDragAndDropState extends State<ExampleDragAndDrop>
         ),
         child: DragTarget<Item>(
           builder: (context, candidateItems, rejectedItems) {
-            return CustomerCart(
+            return CustomerView(
               hasItems: customer.items.isNotEmpty,
               highlighted: candidateItems.isNotEmpty,
               customer: customer,
             );
           },
           onAccept: (item) {
-            _itemDroppedOnCustomerCart(
-              item: item,
-              customer: customer,
-            );
+            customer.items.add(item);
           },
         ),
       ),
@@ -130,8 +251,8 @@ class _ExampleDragAndDropState extends State<ExampleDragAndDrop>
   }
 }
 
-class CustomerCart extends StatelessWidget {
-  const CustomerCart({
+class CustomerView extends StatelessWidget {
+  const CustomerView({
     super.key,
     required this.customer,
     this.highlighted = false,
@@ -206,111 +327,6 @@ class CustomerCart extends StatelessWidget {
                 ),
               )
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class MenuListItem extends StatelessWidget {
-  const MenuListItem({
-    super.key,
-    this.name = "",
-    this.price = "",
-    required this.photoProvider,
-    this.isDepressed = false,
-  });
-
-  final String name;
-  final String price;
-  final ImageProvider photoProvider;
-  final bool isDepressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      elevation: 12.0,
-      borderRadius: BorderRadius.circular(20),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12.0),
-              child: SizedBox(
-                width: 120,
-                height: 120,
-                child: Center(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 100),
-                    curve: Curves.easeInOut,
-                    height: isDepressed ? 115 : 120,
-                    width: isDepressed ? 115 : 120,
-                    child: Image(
-                      image: photoProvider,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 30.0),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontSize: 24.0,
-                        ),
-                  ),
-                  const SizedBox(height: 10.0),
-                  Text(
-                    price,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18.0,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class DraggingListItem extends StatelessWidget {
-  const DraggingListItem({
-    super.key,
-    required this.dragKey,
-    required this.photoProvider,
-  });
-
-  final GlobalKey dragKey;
-  final ImageProvider photoProvider;
-
-  @override
-  Widget build(BuildContext context) {
-    return FractionalTranslation(
-      translation: const Offset(-0.5, -0.5),
-      child: ClipRRect(
-        key: dragKey,
-        borderRadius: BorderRadius.circular(12.0),
-        child: SizedBox(
-          height: 150,
-          width: 150,
-          child: Opacity(
-            opacity: 0.85,
-            child: Image(
-              image: photoProvider,
-              fit: BoxFit.cover,
-            ),
           ),
         ),
       ),
