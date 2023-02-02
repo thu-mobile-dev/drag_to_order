@@ -30,7 +30,8 @@ class Customer {
   }
 }
 
-const List<Item> items = [
+// ignore: constant_identifier_names
+const List<Item> test_items = [
   Item(
     name: "蒙德烤鱼",
     price: 990,
@@ -73,7 +74,8 @@ const List<Item> items = [
   ),
 ];
 
-final List<Customer> customers = [
+// ignore: non_constant_identifier_names
+final List<Customer> test_customers = [
   Customer(
     name: "空",
     image: const AssetImage("assets/customers/空.jpg"),

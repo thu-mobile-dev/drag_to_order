@@ -3,40 +3,29 @@ import "package:drag_to_order/model.dart";
 
 void main() {
   runApp(
-    const MaterialApp(
+    MaterialApp(
       home: FoodStallOrderMenu(),
       debugShowCheckedModeBanner: false,
     ),
   );
 }
 
-@immutable
-class FoodStallOrderMenu extends StatefulWidget {
-  const FoodStallOrderMenu({super.key});
+class FoodStallOrderMenu extends StatelessWidget {
+  FoodStallOrderMenu({super.key});
 
-  @override
-  State<FoodStallOrderMenu> createState() => _FoodStallOrderMenu();
-}
-
-class _FoodStallOrderMenu extends State<FoodStallOrderMenu>
-    with TickerProviderStateMixin {
   final GlobalKey draggableKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
-      body: Stack(
+      backgroundColor: Colors.grey[100],
+      body: Column(
         children: [
-          SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: ItemsView(draggableKey: draggableKey),
-                ),
-                const CustomersView(),
-              ],
-            ),
+          Expanded(
+            child: ItemsView(items: test_items, draggableKey: draggableKey),
+          ),
+          CustomersView(
+            customers: test_customers,
           ),
         ],
       ),
@@ -47,8 +36,9 @@ class _FoodStallOrderMenu extends State<FoodStallOrderMenu>
 // Item
 
 class ItemsView extends StatelessWidget {
-  const ItemsView({super.key, required this.draggableKey});
+  const ItemsView({super.key, required this.items, required this.draggableKey});
 
+  final List<Item> items;
   final GlobalKey draggableKey;
 
   @override
@@ -205,7 +195,9 @@ class DraggingItemView extends StatelessWidget {
 // Customer
 
 class CustomersView extends StatelessWidget {
-  const CustomersView({super.key});
+  const CustomersView({super.key, required this.customers});
+
+  final List<Customer> customers;
 
   @override
   Widget build(BuildContext context) {
@@ -215,9 +207,16 @@ class CustomersView extends StatelessWidget {
         vertical: 20.0,
       ),
       child: Row(
-        children: customers
-            .map((customer) => DroppableCustomerView(customer: customer))
-            .toList(),
+        children: customers.map((customer) {
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 6.0,
+              ),
+              child: DroppableCustomerView(customer: customer),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -225,28 +224,22 @@ class CustomersView extends StatelessWidget {
 
 class DroppableCustomerView extends StatelessWidget {
   const DroppableCustomerView({super.key, required this.customer});
+
   final Customer customer;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 6.0,
-        ),
-        child: DragTarget<Item>(
-          builder: (context, candidateItems, rejectedItems) {
-            return CustomerView(
-              hasItems: customer.items.isNotEmpty,
-              highlighted: candidateItems.isNotEmpty,
-              customer: customer,
-            );
-          },
-          onAccept: (item) {
-            customer.items.add(item);
-          },
-        ),
-      ),
+    return DragTarget<Item>(
+      builder: (context, candidateItems, rejectedItems) {
+        return CustomerView(
+          hasItems: customer.items.isNotEmpty,
+          highlighted: candidateItems.isNotEmpty,
+          customer: customer,
+        );
+      },
+      onAccept: (item) {
+        customer.items.add(item);
+      },
     );
   }
 }
@@ -299,32 +292,22 @@ class CustomerView extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
               ),
-              Visibility(
-                visible: true, // TODO 这里需要一直为 true，所以把这个 Visibility 取了
-                maintainState: true,
-                maintainAnimation: true,
-                maintainSize: true,
-                child: Column(
-                  children: [
-                    const SizedBox(height: 4.0),
-                    Text(
-                      customer.totalPriceString,
-                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                            color: textColor,
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.bold,
-                          ),
+              const SizedBox(height: 4.0),
+              Text(
+                customer.totalPriceString,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                      color: textColor,
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 4.0),
-                    Text(
-                      hasItems ? "共 ${customer.items.length} 份" : "未点餐",
-                      style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                            color: textColor,
-                            fontSize: 12.0,
-                          ),
+              ),
+              const SizedBox(height: 4.0),
+              Text(
+                hasItems ? "共 ${customer.items.length} 份" : "未点餐",
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: textColor,
+                      fontSize: 12.0,
                     ),
-                  ],
-                ),
               )
             ],
           ),
